@@ -25,6 +25,7 @@ resource "aws_internet_gateway" "internet_gateway" {
   }
 }
 
+
 #Route Public
 resource "aws_route_table" "public_route" {
 	vpc_id = aws_vpc.vpc.id
@@ -37,6 +38,20 @@ resource "aws_route_table" "public_route" {
 		Name = "public route"
 	}
 }
+
+# #Route Private 1
+# resource "aws_route_table" "private_route" {
+# 	vpc_id = aws_vpc.vpc.id
+# 	# Routing Provate NAT 1
+# 	route {
+# 		cidr_block = "0.0.0.0/0"
+# 		gateway_id = aws_internet_gateway.internet_gateway.id
+# 	}
+# 	tags = {
+# 		Name = "private route"
+# 	}
+# }
+
 
 data "aws_availability_zones" "available_zones" {}
 
@@ -117,19 +132,6 @@ resource "aws_subnet" "private_data_subnet_az2" {
   }
 }
 
-# Aamazon linux 2 AMI
-data "aws_ami" "amazon_linux_2" {
-  most_recent = true
-  owners      = ["amazon"]
-  filter {
-    name   = "owner-alias"
-    values = ["amazon"]
-  }
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm*"]
-  }
-}
 
 resource "aws_security_group" "security_group" {
 
@@ -139,8 +141,8 @@ resource "aws_security_group" "security_group" {
   
   ingress {
     description = "tcp access"
-    from_port   = 80
-    to_port     = 80
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -182,39 +184,25 @@ resource "aws_security_group" "security_group" {
   }
 }
 
+
 output "aws_security_group_id" {
   value = "${aws_security_group.security_group.id}"
 }
 
-#Elastic IP Address for NAT 
-resource "aws_eip" "nat_eip" {
-  instance = aws_instance.ec2_instance.id
-  vpc = true
+# Aamazon linux 2 AMI
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm*"]
+  }
 }
 
-#NAT GW 
-resource "aws_nat_gateway" "nat_gw"{
-	#Allocation iD of the Elastic IP address for the gateway.
-	allocation_id = aws_eip.nat_eip.id
-	#Subnet ID of the subnet which will connect the gateway.
-	subnet_id = aws_subnet.public_subnet_az1.id
-	tags = {
-		Name = "nat gw"
-	}
-}
-
-#Route Private 1
-resource "aws_route_table" "private_route" {
-	vpc_id = aws_vpc.vpc.id
-	# Routing Provate NAT 1
-	route {
-		cidr_block = "0.0.0.0/0"
-		gateway_id = aws_nat_gateway.nat_gw.id
-	}
-	tags = {
-		Name = "private route"
-	}
-}
 
 #Association public subnet 1 
 resource "aws_route_table_association" "public_route_association" {
@@ -224,31 +212,21 @@ resource "aws_route_table_association" "public_route_association" {
 	route_table_id =  aws_route_table.public_route.id
 }
 
-#Association private subnet 1 
-resource "aws_route_table_association" "private_route_association" {
-	#The Subnet ID Private 1
-	subnet_id = aws_subnet.private_app_subnet_az1.id
-	#ID of Private 1
-	route_table_id =  aws_route_table.private_route.id
-}
-
-
-# Launch the EC2 instance in Public Subnet-1
+# Launch the EC2 instance
 resource "aws_instance" "ec2_instance" {
   ami                         = data.aws_ami.amazon_linux_2.id 
   instance_type               = "t2.micro"
   subnet_id                   = aws_subnet.public_subnet_az1.id
   vpc_security_group_ids      = [aws_security_group.security_group.id]
   key_name                    = "test-kreuzwerker" 
-  user_data              = <<-EOF
-                        #!/bin/bash
-                        apt-get update
-                        apt-get install -y apache2
-                        echo "Hello World" > /var/www/html/index.html
-                        systemctl restart apache2
-                        EOF
+  associate_public_ip_address = true
+  user_data       = <<-EOF
+              #!/bin/bash
+              echo "Hello, World 2" > index.html
+              python3 -m http.server 8080 &
+              EOF
   tags = {
-    Name = "kreuzwerker-worker-1"
+      Name = "kreuzwerker-worker-1"
   }
 }
 
@@ -282,22 +260,15 @@ resource "null_resource" "name" {
     destination = "/home/ec2-user/index.html"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo chmod +x /home/ec2-user/build_docker_image.sh",
-      "sh /home/ec2-user/build_docker_image.sh",
-    ]
-  }
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "sudo chmod +x /home/ec2-user/build_docker_image.sh",
+  #     "sh /home/ec2-user/build_docker_image.sh",
+  #   ]
+  # }
 	depends_on = [ aws_instance.ec2_instance ]
 }
 
 output "website_url_dns" {
   value = join("", ["http://", aws_instance.ec2_instance.public_dns, ":", "8000"])
 }
-
-
-
-
-
-
-

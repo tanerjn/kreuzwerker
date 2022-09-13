@@ -11,7 +11,9 @@ export AWS_PROFILE="terraform-user"
 export AWS_SDK_LOAD_CONFIG=true
 export AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials
 
-Make sure to match the right profile in main.tf/provider.   
+Make sure to match the right profile in main.tf/provider likewise, if terraform-user terraform-user, if master-jedi then master-jedi.
+
+https://796742317656.signin.aws.amazon.com/console
 
 2. Pull `git clone github.com/tanerjn/kreuzwerker.git`
 
@@ -35,6 +37,11 @@ Make sure to match the right profile in main.tf/provider.
     Check egress and ingress, i.e `ping de.de`, `curl de.de` and hopefully see the traffic. 
 
     Also wise to check `terraform state list` once in a while.
+
+    First served webpage will be a simple hello word output from EC2 instance, second is the Docker image publishing a full html page.
+
+Bonus: Visual Studio has resource windows for Terraform and AWS. So you don't need to go to dashboard each time to check on. Note not all services are included as of 09/2022.
+
 
 
 

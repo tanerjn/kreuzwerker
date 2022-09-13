@@ -1,6 +1,9 @@
-FROM lipanski/docker-static-website:latest
+FROM python:3
 
-COPY . .
+ADD index.html index.html
 
-CMD ["/busybox", "httpd", "-f", "-v", "-p", "8000", "-c", "httpd.conf"]
+EXPOSE 8080
 
+CMD [ "-m http.server 8080" ]
+
+ENTRYPOINT [“python3”]
