@@ -24,11 +24,11 @@ module "vpc" {
 	private_data_subnet_az1_cidr = var.private_data_subnet_az1_cidr
 	private_data_subnet_az2_cidr = var.private_data_subnet_az2_cidr
 
-	enable_nat_gateway 		   = true
-	single_nat_gateway   	   = false
+	enable_nat_gateway 		     = true
+	single_nat_gateway   	     = false
 	manage_default_network_acl = false
 	manage_default_route_table = false
-	enable_ipv6 			   = true
+	enable_ipv6 			         = true
 	reuse_nat_ips              = true # <= Skip creation of EIPs for the NAT Gateways
 
 	public_subnets_cidr = ["10.0.10.0/24", "10.0.20.0/24"]
